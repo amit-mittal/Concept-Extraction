@@ -28,20 +28,10 @@
 
 package sample.randomindexing;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Date;
-
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.Version;
+import java.util.Enumeration;
 
 import pitt.search.lucene.*;
 import pitt.search.semanticvectors.*;
@@ -51,149 +41,55 @@ public class RandomIndexer
 {
 	static Path INDEX_DIR = FileSystems.getDefault().getPath("positional_index");
 	static VectorStore newElementalTermVectors = null;
-
-	  public static String usageMessage =
-	    "BuildPositionalIndex class in package pitt.search.semanticvectors"
-	    + "\nUsage: java pitt.search.semanticvectors.BuildPositionalIndex -luceneindexpath PATH_TO_LUCENE_INDEX"
-	    + "\nBuildPositionalIndex creates file termtermvectors.bin in local directory."
-	    + "\nOther parameters that can be changed include"
-	    + "\n    windowlength (size of sliding context window),"
-	    + "\n    dimension (number of dimensions), vectortype (real, complex, binary)"
-	    + "\n    seedlength (number of non-zero entries in basic vectors),"
-	    + "\n    minimum term frequency.\n"
-	    + "\nTo change these use the command line arguments "
-	    + "\n  -vectortype [real, complex, or binary]"
-	    + "\n  -dimension [number of dimensions]"
-	    + "\n  -seedlength [seed length]"
-	    + "\n  -minfrequency [minimum term frequency]"
-	    + "\n  -initialtermvectors [name of preexisting vectorstore for term vectors]"
-	    + "\n  -windowradius [window size]"
-	    + "\n  -positionalmethod [positional indexing method: basic (default), directional (HAL), permutation (Sahlgren 2008)";
-
-	/** Index all text files under a directory. */
+	
 	public static void main(String[] args) 
 	{
-		// Allow for the specification of a directory to write the index to.
-		/*INDEX_DIR = FileSystems.getDefault().getPath("C:/Users/amit/Desktop/b");
-
-		if (Files.exists(INDEX_DIR)) 
-		{
-			throw new IllegalArgumentException(
-					"Cannot save index to '" + INDEX_DIR + "' directory, please delete it first");
-		}
-
-		try 
-		{
-			IndexWriter writer;
-			// Create IndexWriter using porter stemmer or no stemming. No stopword list.
-			//Analyzer analyzer = flagConfig.porterstemmer()
-			// ? new PorterAnalyzer() : new StandardAnalyzer(null);
-			Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_46);
-			IndexWriterConfig writerConfig = new IndexWriterConfig(null, analyzer);
-			writer = new IndexWriter(FSDirectory.open(INDEX_DIR.toFile()), writerConfig);
-
-			final File docDir = new File("C:/Users/amit/Desktop/a/pubmed_result_001.txt");
-			if (!docDir.exists() || !docDir.canRead()) 
-			{
-				writer.close();
-				throw new IOException ("Document directory '" + docDir.getAbsolutePath() +
-						"' does not exist or is not readable, please check the path");
-			}
-
-			Date start = new Date();
-
-			System.out.println("Indexing to directory '" +INDEX_DIR+ "'...");
-			indexDocs(writer, docDir);
-			writer.close();
-
-			Date end = new Date();
-			System.out.println(end.getTime() - start.getTime() + " total milliseconds");
-
-		} 
-		catch (IOException e) 
-		{
-			System.out.println(" caught a " + e.getClass() +
-					"\n with message: " + e.getMessage());
-		}*/
+		String[] indexArgs = new String[5];
+		indexArgs[0] = "C:/Users/amit/Desktop/test/pubmed_result_001.txt";
+		indexArgs[1] = "-minfrequency";
+		indexArgs[2] = "2";
+		indexArgs[3] = "-maxnonalphabetchars";
+		indexArgs[4] = "3";
 		
-		BuildPositionalIndex();
-	}
-
-	static void indexDocs(IndexWriter writer, File file) throws IOException 
-	{
-		// Do not try to index files that cannot be read.
-		if (file.canRead()) 
-		{
-			if (file.isDirectory()) 
-			{
-				String[] files = file.list();
-				// An IO error could occur.
-				if (files != null) 
-				{
-					for (int i = 0; i < files.length; i++) 
-					{
-						// Skip dot files.
-						if (!files[i].startsWith(".")) 
-						{
-							indexDocs(writer, new File(file, files[i]));
-						}
-					}
-				}
-			} 
-			else 
-			{
-				System.out.println("adding " + file);
-				try 
-				{
-					// Use FilePositionDoc rather than FileDoc such that term
-					// positions are indexed also.
-					writer.addDocument(FilePositionDoc.Document(file));
-				}
-				// At least on windows, some temporary files raise this
-				// exception with an "access denied" message. Checking if the
-				// file can be read doesn't help
-				catch (FileNotFoundException fnfe) 
-				{
-					fnfe.printStackTrace();
-				}
-			}
-		}
+		IndexFilePositions.main(indexArgs);
+		
+		String[] svArgs = new String[16];
+		svArgs[0] = "-vectortype";
+		svArgs[1] = "real";
+		svArgs[2] = "-dimension";
+		svArgs[3] = "100";
+		svArgs[4] = "-seedlength";
+		svArgs[5] = "15";
+		svArgs[6] = "-docindexing";
+		svArgs[7] = "incremental";
+		svArgs[8] = "-windowradius";
+		svArgs[9] = "2";
+		svArgs[10] = "-positionalmethod";
+		svArgs[11] = "basic";
+		svArgs[12] = "-luceneindexpath";
+		svArgs[13] = "positional_index/";
+		svArgs[14] = "-indexfileformat";
+		svArgs[15] = "text";
+		
+		//BuildPositionalIndex.main(svArgs);
+		
+		BuildPositionalIndex(svArgs);
 	}
 	
-	static void BuildPositionalIndex() throws IllegalArgumentException
+	static void BuildPositionalIndex(String[] args) throws IllegalArgumentException
 	{
-		String[] args = new String[16];
-		args[0] = "-vectortype";
-		args[1] = "real";
-		args[2] = "-dimension";
-		args[3] = "1000";
-		args[4] = "-seedlength";
-		args[5] = "5";
-		args[6] = "-minfrequency";
-		args[7] = "10";
-		args[8] = "-windowradius";
-		args[9] = "1";
-		args[10] = "-positionalmethod";
-		args[11] = "directional";
-		args[12] = "-luceneindexpath";
-		args[13] = "C:/Users/amit/Desktop/b";
-		args[14] = "-maxfrequency";
-		args[15] = "12";
-		
-		
 		FlagConfig flagConfig;
 	    try {
 	      flagConfig = FlagConfig.getFlagConfig(args);
 	      args = flagConfig.remainingArgs;
 	    } catch (IllegalArgumentException e) {
-	      System.out.println(usageMessage);
 	      throw e;
 	    }
 
-	    /*if (flagConfig.luceneindexpath().isEmpty()) {
+	    if (flagConfig.luceneindexpath().isEmpty()) {
 	      throw (new IllegalArgumentException("-luceneindexpath must be set."));
-	    }*/
-	    String luceneIndex = "C:/Users/amit/Desktop/b";
+	    }
+	    String luceneIndex = flagConfig.luceneindexpath();
 	    
 	    String termFile = "";
 	    switch (flagConfig.positionalmethod()) {
@@ -225,7 +121,6 @@ public class RandomIndexer
 	        + ", Maximum term frequency: " + flagConfig.maxfrequency()
 	        + ", Number non-alphabet characters: " + flagConfig.maxnonalphabetchars()
 	        + ", Window radius: " + flagConfig.windowradius()
-//	        + ", Fields to index: " + Arrays.toString(flagConfig.contentsfields())
 	        + "\n");
 
 	    try {
@@ -244,15 +139,21 @@ public class RandomIndexer
 	      }
 
 	      // Incremental indexing is hardcoded into BuildPositionalIndex.
-	      // TODO: Understand if this is an appropriate requirement, and whether
-	      //       the user should be alerted of any potential consequences.
 	      if (flagConfig.docindexing() != DocIndexingStrategy.NONE) {
 	        IncrementalDocVectors.createIncrementalDocVectors(
 	            termTermIndexer.getSemanticTermVectors(), flagConfig, new LuceneUtils(flagConfig));
 	      }
+	      
+	      tryStuff(termTermIndexer);
 	    }
 	    catch (IOException e) {
 	      e.printStackTrace();
 	    }
+	}
+	
+	public static void tryStuff(TermTermVectorsFromLucene termTermIndexer)
+	{
+		Enumeration<ObjectVector> v = termTermIndexer.getSemanticTermVectors().getAllVectors();
+		System.out.println(termTermIndexer.getSemanticTermVectors().getVector("methodological"));
 	}
 }
