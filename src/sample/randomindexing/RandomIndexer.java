@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 
 import pitt.search.lucene.IndexFilePositions;
@@ -52,6 +53,8 @@ public class RandomIndexer
 			.getPath("positional_index");
 	static VectorStore newElementalTermVectors = null;
 	static TermTermVectorsFromLucene termTermIndexer;
+	static HashMap<Integer, String> idWordMap;
+	static HashMap<String, Integer> wordCategoryMap;
 
 	public static void main(String[] args)
 	{
@@ -86,15 +89,19 @@ public class RandomIndexer
 
 		BuildPositionalIndex(svArgs);
 
-		// TODO add query vector parameter so that can do for custom file
-		// TODO also file format should be binary
+		// add query vector parameter so that can do for custom file
+		// also file format should be binary
 		String[] searchArgs = new String[3];
 		searchArgs[0] = "-queryvectorfile";
 		searchArgs[1] = "drxntermvectors.bin";
-		searchArgs[2] = "pain"; // word to search
-
+		
+		// TODO Find F-Score and Accuracy to determine the best model
+		PopulateMaps();
 		FindNearestNeighbors(searchArgs);
 		tryStuff();
+		
+		// Then find the similarity matrix
+		GenerateSimilarityMatrix();
 	}
 
 	static void BuildPositionalIndex(String[] args)
@@ -182,6 +189,27 @@ public class RandomIndexer
 			e.printStackTrace();
 		}
 	}
+	
+	public static void PopulateMaps()
+	{
+		idWordMap = new HashMap<Integer, String>();
+		// 1. problem 2. treatment 3. test 4. none
+		wordCategoryMap = new HashMap<String, Integer>(); 
+		Enumeration<ObjectVector> v = termTermIndexer.getSemanticTermVectors()
+				.getAllVectors();
+		
+		// Populating id to word map
+		int rank = 0;
+		while(v.hasMoreElements())
+		{
+			String word = v.nextElement().getObject().toString();
+			idWordMap.put(rank, word);
+			++rank;
+			
+			// if word this then assign this no.
+			wordCategoryMap.put(word, 0);
+		}
+	}
 
 	public static void FindNearestNeighbors(String[] args)
 	{
@@ -189,8 +217,23 @@ public class RandomIndexer
 		List<SearchResult> results;
 		try
 		{
-			flagConfig = FlagConfig.getFlagConfig(args);
-			results = Search.runSearch(flagConfig);
+			for(int i = 0 ; i < idWordMap.size() ; ++i)
+			{
+				args[2] = idWordMap.get(i);
+				flagConfig = FlagConfig.getFlagConfig(args);
+				results = Search.runSearch(flagConfig);
+				
+				int actualCategory = wordCategoryMap.get(args[2]);
+				double categories[] = new double[]{0.0, 0.0, 0.0, 0.0};
+				for (SearchResult result : results)
+				{
+					String w = result.getObjectVector().getObject().toString();
+					categories[wordCategoryMap.get(w)] += result.getScore();
+				}
+				
+				// find max likelihood category and then calculate mismatches etc.
+			}
+			
 		}
 		catch (IllegalArgumentException e)
 		{
@@ -198,7 +241,7 @@ public class RandomIndexer
 		}
 
 		// Print out results.
-		int ranking = 0;
+		/*int ranking = 0;
 		if (results.size() > 0)
 		{
 			System.out.println("Search output follows ...\n");
@@ -208,21 +251,42 @@ public class RandomIndexer
 				System.out.println(result.getObjectVector().getObject()
 						.toString());
 
-				/*
+				
 				 * if (flagConfig.boundvectorfile().isEmpty() &&
 				 * flagConfig.elementalvectorfile().isEmpty()) {
 				 * PsiUtils.printNearestPredicate(flagConfig); }
-				 */
+				 
 			}
 
-			/*
+			
 			 * if (!flagConfig.jsonfile().isEmpty()) {
 			 * PathFinder.pathfinderWriterWrapper(flagConfig, results); }
-			 */
+			 
 		}
 		else
 		{
 			System.out.println("No search output.\n");
+		}*/
+	}
+	
+	public static void GenerateSimilarityMatrix()
+	{
+		Enumeration<ObjectVector> vi = termTermIndexer.getSemanticTermVectors()
+				.getAllVectors();
+		int size = termTermIndexer.getSemanticTermVectors().getNumVectors();
+		
+		// TODO optimize this
+		double[][] matrix = new double[size][size];
+		for(int i = 0 ; i < size ; ++i)
+		{
+			ObjectVector m = vi.nextElement();
+			Enumeration<ObjectVector> vj = termTermIndexer.getSemanticTermVectors()
+					.getAllVectors();
+			for(int j = 0 ; j < size ; ++j)
+			{
+				ObjectVector n = vj.nextElement();
+				matrix[i][j] = m.getVector().measureOverlap(n.getVector());
+			}
 		}
 	}
 
