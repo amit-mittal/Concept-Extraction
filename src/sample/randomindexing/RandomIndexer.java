@@ -35,69 +35,39 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 
-import pitt.search.lucene.IndexFilePositions;
-import pitt.search.semanticvectors.DocVectors.DocIndexingStrategy;
 import pitt.search.semanticvectors.FlagConfig;
-import pitt.search.semanticvectors.IncrementalDocVectors;
-import pitt.search.semanticvectors.LuceneUtils;
 import pitt.search.semanticvectors.ObjectVector;
 import pitt.search.semanticvectors.Search;
 import pitt.search.semanticvectors.SearchResult;
 import pitt.search.semanticvectors.TermTermVectorsFromLucene;
 import pitt.search.semanticvectors.VectorStore;
-import pitt.search.semanticvectors.VectorStoreWriter;
+import pitt.search.semanticvectors.VectorStoreReaderLucene;
 
 public class RandomIndexer
 {
-    static Path INDEX_DIR = FileSystems.getDefault()
-            .getPath("positional_index");
-    static VectorStore newElementalTermVectors = null;
-    static TermTermVectorsFromLucene termTermIndexer;
+    static VectorStoreReaderLucene storeReader;
     static HashMap<Integer, String> idWordMap;
     static HashMap<String, Integer> wordCategoryMap;
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws IOException
     {
-        // TODO try to optimize the parameters so that index size decreases
-        String[] indexArgs = new String[5];
-        indexArgs[0] = "C:/Users/amit/Desktop/test/pubmed_result_001.txt";
-        indexArgs[1] = "-minfrequency";
-        indexArgs[2] = "2";
-        indexArgs[3] = "-maxnonalphabetchars";
-        indexArgs[4] = "3";
+        DataIndexer indexer = new DataIndexer();
+        // indexer.IndexDirectory();
 
-        // IndexFilePositions.main(indexArgs);
-
-        String[] svArgs = new String[14];
-        svArgs[0] = "-vectortype";
-        svArgs[1] = "real";
-        svArgs[2] = "-dimension";
-        svArgs[3] = "100";
-        svArgs[4] = "-seedlength";
-        svArgs[5] = "15";
-        svArgs[6] = "-docindexing";
-        svArgs[7] = "incremental";
-        svArgs[8] = "-windowradius";
-        svArgs[9] = "2";
-        svArgs[10] = "-positionalmethod";
-        svArgs[11] = "directional";
-        svArgs[12] = "-luceneindexpath";
-        svArgs[13] = "positional_index/";
-        // svArgs[14] = "-indexfileformat";
-        // svArgs[15] = "text";
-
-        // BuildPositionalIndex.main(svArgs);
-
-        BuildPositionalIndex(svArgs);
-
+        PositionalIndexer.InitializeArgs();
+        // PositionalIndexer.BuildPositionalIndex();
+        FlagConfig flagConfig = FlagConfig.getFlagConfig(PositionalIndexer.args);
+        
+        storeReader = new VectorStoreReaderLucene("drxntermvectors.bin", flagConfig);
+        
         // add query vector parameter so that can do for custom file
         // also file format should be binary
         String[] searchArgs = new String[3];
         searchArgs[0] = "-queryvectorfile";
         searchArgs[1] = "drxntermvectors.bin";
 
-        PopulateMaps();
-        FindNearestNeighbors(searchArgs);
+        // PopulateMaps();
+        // FindNearestNeighbors(searchArgs);
         tryStuff();
 
         // TODO Load UMLS
@@ -107,99 +77,12 @@ public class RandomIndexer
         // GenerateSimilarityMatrix();
     }
 
-    static void BuildPositionalIndex(String[] args)
-            throws IllegalArgumentException
-    {
-        FlagConfig flagConfig;
-        try
-        {
-            flagConfig = FlagConfig.getFlagConfig(args);
-            args = flagConfig.remainingArgs;
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw e;
-        }
-
-        if (flagConfig.luceneindexpath().isEmpty())
-        {
-            throw (new IllegalArgumentException("-luceneindexpath must be set."));
-        }
-        String luceneIndex = flagConfig.luceneindexpath();
-
-        String termFile = "";
-        switch (flagConfig.positionalmethod())
-        {
-        case BASIC:
-            termFile = flagConfig.termtermvectorsfile();
-            break;
-        case PROXIMITY:
-            termFile = flagConfig.proximityvectorfile();
-            break;
-        case PERMUTATION:
-            termFile = flagConfig.permutedvectorfile();
-            break;
-        case PERMUTATIONPLUSBASIC:
-            termFile = flagConfig.permplustermvectorfile();
-            break;
-        case DIRECTIONAL:
-            termFile = flagConfig.directionalvectorfile();
-            break;
-        default:
-            throw new IllegalArgumentException(
-                    "Unrecognized -positionalmethod: "
-                            + flagConfig.positionalmethod());
-        }
-
-        System.out.println("Building positional index, Lucene index: "
-                + luceneIndex + ", Seedlength: " + flagConfig.seedlength()
-                + ", Vector length: " + flagConfig.dimension()
-                + ", Vector type: " + flagConfig.vectortype()
-                + ", Minimum term frequency: " + flagConfig.minfrequency()
-                + ", Maximum term frequency: " + flagConfig.maxfrequency()
-                + ", Number non-alphabet characters: "
-                + flagConfig.maxnonalphabetchars() + ", Window radius: "
-                + flagConfig.windowradius() + "\n");
-
-        try
-        {
-            termTermIndexer = new TermTermVectorsFromLucene(flagConfig,
-                    newElementalTermVectors);
-
-            VectorStoreWriter.writeVectors(termFile, flagConfig,
-                    termTermIndexer.getSemanticTermVectors());
-
-            for (int i = 1; i < flagConfig.trainingcycles(); ++i)
-            {
-                newElementalTermVectors = termTermIndexer
-                        .getSemanticTermVectors();
-                System.out
-                        .println("\nRetraining with learned term vectors ...");
-                termTermIndexer = new TermTermVectorsFromLucene(flagConfig,
-                        newElementalTermVectors);
-            }
-
-            // Incremental indexing is hardcoded into BuildPositionalIndex.
-            if (flagConfig.docindexing() != DocIndexingStrategy.NONE)
-            {
-                IncrementalDocVectors.createIncrementalDocVectors(
-                        termTermIndexer.getSemanticTermVectors(), flagConfig,
-                        new LuceneUtils(flagConfig));
-            }
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
     public static void PopulateMaps()
     {
         idWordMap = new HashMap<Integer, String>();
         // 1. problem 2. treatment 3. test 4. none
         wordCategoryMap = new HashMap<String, Integer>();
-        Enumeration<ObjectVector> v = termTermIndexer.getSemanticTermVectors()
-                .getAllVectors();
+        Enumeration<ObjectVector> v = storeReader.getAllVectors();
 
         // Populating id to word map
         int rank = 0;
@@ -244,42 +127,19 @@ public class RandomIndexer
         {
             throw e;
         }
-
-        // Print out results.
-        /*
-         * int ranking = 0; if (results.size() > 0) {
-         * System.out.println("Search output follows ...\n"); for (SearchResult
-         * result : results) { ++ranking;
-         * System.out.println(result.getObjectVector().getObject() .toString());
-         * 
-         * 
-         * if (flagConfig.boundvectorfile().isEmpty() &&
-         * flagConfig.elementalvectorfile().isEmpty()) {
-         * PsiUtils.printNearestPredicate(flagConfig); }
-         * 
-         * }
-         * 
-         * 
-         * if (!flagConfig.jsonfile().isEmpty()) {
-         * PathFinder.pathfinderWriterWrapper(flagConfig, results); }
-         * 
-         * } else { System.out.println("No search output.\n"); }
-         */
     }
 
     public static void GenerateSimilarityMatrix()
     {
-        Enumeration<ObjectVector> vi = termTermIndexer.getSemanticTermVectors()
-                .getAllVectors();
-        int size = termTermIndexer.getSemanticTermVectors().getNumVectors();
+        Enumeration<ObjectVector> vi = storeReader.getAllVectors();
+        int size = storeReader.getNumVectors();
 
         // TODO optimize this
         double[][] matrix = new double[size][size];
         for (int i = 0; i < size; ++i)
         {
             ObjectVector m = vi.nextElement();
-            Enumeration<ObjectVector> vj = termTermIndexer
-                    .getSemanticTermVectors().getAllVectors();
+            Enumeration<ObjectVector> vj = storeReader.getAllVectors();
             for (int j = 0; j < size; ++j)
             {
                 ObjectVector n = vj.nextElement();
@@ -290,10 +150,8 @@ public class RandomIndexer
 
     public static void tryStuff()
     {
-        Enumeration<ObjectVector> v = termTermIndexer.getSemanticTermVectors()
-                .getAllVectors();
-        System.out.println(termTermIndexer.getSemanticTermVectors().getVector(
-                "methodological"));
+        Enumeration<ObjectVector> v = storeReader.getAllVectors();
+        System.out.println(storeReader.getVector("exercise"));
 
         System.out.println(v.nextElement().getObject()); // this gets the tag
                                                          // value
