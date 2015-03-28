@@ -22,9 +22,9 @@ public class PositionalIndexer
         args[0] = "-vectortype";
         args[1] = "real";
         args[2] = "-dimension";
-        args[3] = "100";
+        args[3] = "2000";
         args[4] = "-seedlength";
-        args[5] = "15";
+        args[5] = "20";
         args[6] = "-docindexing";
         args[7] = "incremental";
         args[8] = "-windowradius";
