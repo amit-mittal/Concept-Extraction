@@ -35,7 +35,7 @@ public class SqlHandler
             e.printStackTrace();
         }
         
-        System.out.println("Connected!!");
+        System.out.println("Connected to SQL Database!!");
     }
 
     public void disconnect()
@@ -43,7 +43,7 @@ public class SqlHandler
         try
         {
             conn.close();
-            System.out.println("Disconnected!!");
+            System.out.println("Disconnected from SQL Database!!");
         }
         catch (SQLException e)
         {
@@ -53,33 +53,36 @@ public class SqlHandler
 
     public TreeSet<String> getMedicalProblems()
     {
-        TreeSet<String> problems = getListFromSqlQuery(SqlQuery.GET_ALL_MEDICAL_PROBLEMS);
+        System.out.println("Getting Medical Problems");
+        TreeSet<String> problems = getSetFromSqlQuery(SqlQuery.GET_ALL_MEDICAL_PROBLEMS);
 
         return problems;
     }
     
     public TreeSet<String> getMedicalTreatments()
     {
-        TreeSet<String> treatments = getListFromSqlQuery(SqlQuery.GET_ALL_MEDICAL_TREATMENTS);
+        System.out.println("Getting Medical Treatments");
+        TreeSet<String> treatments = getSetFromSqlQuery(SqlQuery.GET_ALL_MEDICAL_TREATMENTS);
 
         return treatments;
     }
     
     public TreeSet<String> getMedicalTests()
     {
-        TreeSet<String> tests = getListFromSqlQuery(SqlQuery.GET_ALL_MEDICAL_TESTS);
+        System.out.println("Getting Medical Tests");
+        TreeSet<String> tests = getSetFromSqlQuery(SqlQuery.GET_ALL_MEDICAL_TESTS);
 
         return tests;
     }
     
-    private TreeSet<String> getListFromSqlQuery(String query)
+    private TreeSet<String> getSetFromSqlQuery(String query)
     {
         TreeSet<String> set = new TreeSet<String>();  
         Statement stmt = null;
         try
         {
-         // Execute a query
-            System.out.println("Creating statement...");
+            // Execute a query
+            System.out.println("Executing query...");
             stmt = conn.createStatement();
             
             ResultSet resultSet = stmt.executeQuery(query);
@@ -87,12 +90,15 @@ public class SqlHandler
             // Extract data from result set
             while (resultSet.next())
             {
-                // Retrieve by column name
-                String str = resultSet.getString("STR");
+                // Retrieve by column name and converting to lower case
+                String str = resultSet.getString("STR").toLowerCase();
 
                 // Adding string to list
                 set.add(str);
             }
+            
+            System.out.println("Found " + set.size() + " rows");
+            
             // Clean-up environment
             resultSet.close();
         }
@@ -117,8 +123,6 @@ public class SqlHandler
             }
         }
         
-        System.out.println(set.size());
-
         return set;
     }
 }
