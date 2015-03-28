@@ -5,14 +5,21 @@ public class Concept
     public int true_positive;
     public int false_positive;
     public int false_negative;
-    
+
     public Concept()
     {
         true_positive = 0;
         false_positive = 0;
         false_negative = 0;
     }
-    
+
+    @Override
+    public String toString()
+    {
+        return "True Positive: " + true_positive + " False Positive: "
+                + false_positive + " False Negative: " + false_negative;
+    }
+
     public float findPrecision()
     {
         float p = (float) this.true_positive
