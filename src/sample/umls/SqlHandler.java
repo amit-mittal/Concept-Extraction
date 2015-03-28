@@ -5,8 +5,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.TreeSet;
 
 public class SqlHandler
 {
@@ -19,7 +18,7 @@ public class SqlHandler
 
     public static Connection conn = null;
 
-    public void Connect()
+    public void connect()
     {
         try
         {
@@ -39,7 +38,7 @@ public class SqlHandler
         System.out.println("Connected!!");
     }
 
-    public void Disconnect()
+    public void disconnect()
     {
         try
         {
@@ -52,29 +51,50 @@ public class SqlHandler
         }
     }
 
-    public List<String> GetMedicalProblems()
+    public TreeSet<String> getMedicalProblems()
     {
-        List<String> problems = new ArrayList<String>();
+        TreeSet<String> problems = getListFromSqlQuery(SqlQuery.GET_ALL_MEDICAL_PROBLEMS);
+
+        return problems;
+    }
+    
+    public TreeSet<String> getMedicalTreatments()
+    {
+        TreeSet<String> treatments = getListFromSqlQuery(SqlQuery.GET_ALL_MEDICAL_TREATMENTS);
+
+        return treatments;
+    }
+    
+    public TreeSet<String> getMedicalTests()
+    {
+        TreeSet<String> tests = getListFromSqlQuery(SqlQuery.GET_ALL_MEDICAL_TESTS);
+
+        return tests;
+    }
+    
+    private TreeSet<String> getListFromSqlQuery(String query)
+    {
+        TreeSet<String> set = new TreeSet<String>();  
         Statement stmt = null;
         try
         {
-            // Execute a query
+         // Execute a query
             System.out.println("Creating statement...");
             stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(SqlQuery.GET_ALL_MEDICAL_PROBLEMS);
-
+            
+            ResultSet resultSet = stmt.executeQuery(query);
+            
             // Extract data from result set
-            while (rs.next())
+            while (resultSet.next())
             {
                 // Retrieve by column name
-                String str = rs.getString("STR");
+                String str = resultSet.getString("STR");
 
                 // Adding string to list
-                problems.add(str);
+                set.add(str);
             }
             // Clean-up environment
-            rs.close();
-            stmt.close();
+            resultSet.close();
         }
         catch (Exception e)
         {
@@ -87,7 +107,9 @@ public class SqlHandler
             try
             {
                 if (stmt != null)
+                {
                     stmt.close();
+                }
             }
             catch (SQLException se2)
             {
@@ -95,8 +117,8 @@ public class SqlHandler
             }
         }
         
-        System.out.println(problems.size());
+        System.out.println(set.size());
 
-        return problems;
+        return set;
     }
 }
