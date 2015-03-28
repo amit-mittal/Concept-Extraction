@@ -29,8 +29,6 @@
 package sample.randomindexing;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -39,9 +37,9 @@ import pitt.search.semanticvectors.FlagConfig;
 import pitt.search.semanticvectors.ObjectVector;
 import pitt.search.semanticvectors.Search;
 import pitt.search.semanticvectors.SearchResult;
-import pitt.search.semanticvectors.TermTermVectorsFromLucene;
-import pitt.search.semanticvectors.VectorStore;
 import pitt.search.semanticvectors.VectorStoreReaderLucene;
+import sample.criterias.Concept;
+import sample.umls.UmlsHandler;
 
 public class RandomIndexer
 {
@@ -49,79 +47,159 @@ public class RandomIndexer
     static HashMap<Integer, String> idWordMap;
     static HashMap<String, Integer> wordCategoryMap;
 
+    static Concept problem = new Concept();
+    static Concept treatment = new Concept();
+    static Concept test = new Concept();
+
     public static void main(String[] args) throws IOException
     {
-        DataIndexer indexer = new DataIndexer();
-        // indexer.IndexDirectory();
+        System.err.close();
+        
+        /*
+         * DataIndexer indexer = new DataIndexer(); indexer.IndexDirectory();
+         * 
+         * PositionalIndexer.InitializeArgs();
+         * PositionalIndexer.BuildPositionalIndex();
+         */
+        FlagConfig flagConfig = FlagConfig
+                .getFlagConfig(PositionalIndexer.args);
 
-        PositionalIndexer.InitializeArgs();
-        // PositionalIndexer.BuildPositionalIndex();
-        FlagConfig flagConfig = FlagConfig.getFlagConfig(PositionalIndexer.args);
-        
-        storeReader = new VectorStoreReaderLucene("drxntermvectors.bin", flagConfig);
-        
+        storeReader = new VectorStoreReaderLucene("drxntermvectors.bin",
+                flagConfig);
+
         // add query vector parameter so that can do for custom file
         // also file format should be binary
-        String[] searchArgs = new String[3];
-        searchArgs[0] = "-queryvectorfile";
-        searchArgs[1] = "drxntermvectors.bin";
 
         // PopulateMaps();
         // FindNearestNeighbors(searchArgs);
-        tryStuff();
+        // tryStuff();
 
         // TODO Load UMLS
+        UmlsHandler umlsHandler = new UmlsHandler();
+        umlsHandler.getDataFromSql();
+
+        // 0. problem 1. treatment 2. test 3. none
+        wordCategoryMap = new HashMap<String, Integer>();
+        Enumeration<ObjectVector> v = storeReader.getAllVectors();
+
+        // Populating word to category map
+        while (v.hasMoreElements())
+        {
+            String word = v.nextElement().getObject().toString().toLowerCase();
+
+            if (umlsHandler.problems.contains(word))
+            {
+                wordCategoryMap.put(word, 0);
+            }
+            else if (umlsHandler.treatments.contains(word))
+            {
+                wordCategoryMap.put(word, 1);
+            }
+            else if (umlsHandler.tests.contains(word))
+            {
+                wordCategoryMap.put(word, 2);
+            }
+            else
+            {
+                wordCategoryMap.put(word, 3);
+            }
+        }
+        
         // TODO Find F-Score and Accuracy to determine the best model
+        FindFScores();
 
         // Then find the similarity matrix
         // GenerateSimilarityMatrix();
     }
 
-    public static void PopulateMaps()
+    public static void FindFScores()
     {
-        idWordMap = new HashMap<Integer, String>();
-        // 1. problem 2. treatment 3. test 4. none
-        wordCategoryMap = new HashMap<String, Integer>();
-        Enumeration<ObjectVector> v = storeReader.getAllVectors();
-
-        // Populating id to word map
-        int rank = 0;
-        while (v.hasMoreElements())
+        int r = 0;
+        for (String word : wordCategoryMap.keySet())
         {
-            String word = v.nextElement().getObject().toString();
-            idWordMap.put(rank, word);
-            ++rank;
+            ++r;
+            // TODO refactor below code
+            int actualCategory = wordCategoryMap.get(word);
+            int predictedCategory = FindNearestNeighbor(word);
+            if (predictedCategory == actualCategory)
+            {
+                // increment correct concept
+                if (predictedCategory == 0)
+                    problem.true_positive += 1;
+                else if (predictedCategory == 1)
+                    treatment.true_positive += 1;
+                else if (predictedCategory == 2)
+                    test.true_positive += 1;
+            }
+            else
+            {
+                if (predictedCategory == 0)
+                    problem.false_positive += 1;
+                else if (predictedCategory == 1)
+                    treatment.false_positive += 1;
+                else if (predictedCategory == 2)
+                    test.false_positive += 1;
 
-            // if word this then assign this no.
-            wordCategoryMap.put(word, 0);
+                if (actualCategory == 0)
+                    problem.false_negative += 1;
+                else if (actualCategory == 1)
+                    treatment.false_negative += 1;
+                else if (actualCategory == 2)
+                    test.false_negative += 1;
+            }
+
+            if (r > 60)
+                break;
         }
+
+        System.out.println("Problem: " + problem);
+        System.out.println("F1 Score for problem: " + problem.findF1Measure());
+
+        System.out.println("Treatment: " + treatment);
+        System.out.println("F1 Score for treatment: "
+                + treatment.findF1Measure());
+
+        System.out.println("Test: " + test);
+        System.out.println("F1 Score for test: " + test.findF1Measure());
     }
 
-    public static void FindNearestNeighbors(String[] args)
+    public static int FindNearestNeighbor(String query)
     {
+        String[] searchArgs = new String[3];
+        searchArgs[0] = "-queryvectorfile";
+        searchArgs[1] = "drxntermvectors.bin";
+        searchArgs[2] = query;
+
         FlagConfig flagConfig;
         List<SearchResult> results;
         try
         {
-            for (int i = 0; i < idWordMap.size(); ++i)
+            flagConfig = FlagConfig.getFlagConfig(searchArgs);
+            results = Search.runSearch(flagConfig);
+
+            double categories[] = new double[]
+            { 0.0, 0.0, 0.0, 0.0 };
+            for (int i = 1; i < results.size(); ++i)
             {
-                args[2] = idWordMap.get(i);
-                flagConfig = FlagConfig.getFlagConfig(args);
-                results = Search.runSearch(flagConfig);
-
-                int actualCategory = wordCategoryMap.get(args[2]);
-                double categories[] = new double[]
-                { 0.0, 0.0, 0.0, 0.0 };
-                for (SearchResult result : results)
-                {
-                    String w = result.getObjectVector().getObject().toString();
-                    categories[wordCategoryMap.get(w)] += result.getScore();
-                }
-
-                // find max likelihood category and then calculate mismatches
-                // etc.
+                SearchResult result = results.get(i);
+                String w = result.getObjectVector().getObject().toString()
+                        .toLowerCase();
+                categories[wordCategoryMap.get(w)] += result.getScore();
             }
 
+            // TODO refactor below function
+            double largest = categories[0];
+            int index = 0;
+            for (int i = 1; i < categories.length; i++)
+            {
+                if (categories[i] > largest)
+                {
+                    largest = categories[i];
+                    index = i;
+                }
+            }
+
+            return index + 1;
         }
         catch (IllegalArgumentException e)
         {
