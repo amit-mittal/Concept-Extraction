@@ -19,7 +19,7 @@ public class SqlQuery
     
     public static String GET_ALL_MEDICAL_PROBLEMS = "SELECT STR FROM problems";
     
-    public static String GET_ALL_MEDICAL_TREATMENTS = "SELECT STR FROM treatments LIMIT 100000";
+    public static String GET_ALL_MEDICAL_TREATMENTS = "SELECT STR FROM treatments";
     
     public static String GET_ALL_MEDICAL_TESTS = "SELECT STR FROM tests";
 }
