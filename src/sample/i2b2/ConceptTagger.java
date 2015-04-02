@@ -18,6 +18,7 @@ import banner.tagging.TaggedToken.TagFormat;
 
 public class ConceptTagger
 {
+    public static List<Sentence> sentences = new ArrayList<Sentence>();
     public HashMap<Integer, List<Triplet<Integer, Integer, String>>> conceptMap;
 
     public void ParseConceptFile(String dirName, String fileName)
@@ -129,13 +130,32 @@ public class ConceptTagger
         }
     }
 
+    public void ConvertTextToSentences(String dirName, String fileName)
+    {
+        try (BufferedReader br = new BufferedReader(new FileReader(dirName
+                + fileName)))
+        {
+            String currLine;
+            while ((currLine = br.readLine()) != null)
+            {
+                Sentence s = Sentence.loadFromPiped(null, currLine);
+                sentences.add(s);
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args)
     {
-        List<Sentence> sentences = new ArrayList<Sentence>();
         File conceptDir = new File("C:/Users/amit/Desktop/concept/");
         File txtDir = new File("C:/Users/amit/Desktop/txt/");
+        File newTxtDir = new File("C:/Users/amit/Desktop/newconcept/");
         File[] allConceptFiles = conceptDir.listFiles();
 
+        System.out.println("Converting data into MALLET format");
         ConceptTagger c = new ConceptTagger();
         for (int i = 0; i < allConceptFiles.length; ++i)
         {
@@ -143,19 +163,14 @@ public class ConceptTagger
                     allConceptFiles[i].getName());
             c.ParseTextFile(txtDir.getAbsolutePath() + "/",
                     txtDir.listFiles()[i].getName());
+            c.ConvertTextToSentences(newTxtDir.getAbsolutePath() + "/",
+                    newTxtDir.listFiles()[i].getName());
         }
+        System.out.println("Converting data into MALLET format...done");
 
-        /*
-         * // TODO do it for each string Sentence s =
-         * Sentence.loadFromPiped("tag",
-         * "Hello|B-Problem I|I-Problem am|O looking|B-Treatment awesome|B-Test today|I-Test .|O\n"
-         * ); sentences.add(s);
-         * 
-         * System.out.println(s.getTrainingText(TagFormat.IOB)); CRFTagger crf =
-         * CRFTagger.train(sentences, 1, false, TagFormat.IOB,
-         * TextDirection.Forward, null, null, false);
-         * 
-         * crf.write(new File("C:/Users/amit/Desktop/CRF.txt"));
-         */
+        CRFTagger crf = CRFTagger.train(sentences, 1, false, TagFormat.IOB,
+                TextDirection.Forward, null, null, false);
+
+        crf.write(new File("C:/Users/amit/Desktop/CRF.txt"));
     }
 }
