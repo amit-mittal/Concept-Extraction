@@ -138,6 +138,9 @@ public class ConceptTagger
             String currLine;
             while ((currLine = br.readLine()) != null)
             {
+                currLine = currLine.trim();
+                if(currLine.length() == 0)
+                    continue;
                 Sentence s = Sentence.loadFromPiped(null, currLine);
                 sentences.add(s);
             }
@@ -168,8 +171,10 @@ public class ConceptTagger
         }
         System.out.println("Converting data into MALLET format...done");
 
-        CRFTagger crf = CRFTagger.train(sentences, 1, false, TagFormat.IOB,
-                TextDirection.Forward, null, null, false);
+        CRFTagger crf = CRFTagger.train(sentences, 1, true, TagFormat.IOB,
+                TextDirection.Forward, null, null, true);
+        
+        
 
         crf.write(new File("C:/Users/amit/Desktop/CRF.txt"));
     }
