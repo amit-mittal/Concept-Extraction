@@ -121,7 +121,7 @@ public class ConceptTagger
 
             PrintWriter out = new PrintWriter(
                     "C:/Users/amit/Desktop/newconcept/" + fileName);
-            out.println(newString.toString());
+            out.println(newString.toString().trim());
             out.close();
         }
         catch (IOException e)
