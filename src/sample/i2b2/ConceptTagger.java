@@ -11,9 +11,11 @@ import java.util.List;
 
 import org.javatuples.Triplet;
 
+import edu.umass.cs.mallet.base.fst.PerClassAccuracyEvaluator;
 import banner.BannerProperties.TextDirection;
 import banner.Sentence;
 import banner.tagging.CRFTagger;
+import banner.tagging.Mention;
 import banner.tagging.TaggedToken.TagFormat;
 
 public class ConceptTagger
@@ -108,9 +110,7 @@ public class ConceptTagger
                     }
 
                     if (!found)
-                    {
                         newString.append("O");
-                    }
 
                     newString.append(" ");
                 }
@@ -150,8 +150,20 @@ public class ConceptTagger
             e.printStackTrace();
         }
     }
+    
+    public void tagSentence() throws IOException
+    {
+        Sentence s = Sentence.loadFromPiped(null, "There|O was|O no|O appreciable|B-problem cervical|I-problem ,|I-problem supraclavicular|I-problem ,|I-problem axillary|I-problem ,|I-problem or|I-problem inguinal|I-problem adenopathy|I-problem .|O ");
+        CRFTagger t = CRFTagger.load(new File("C:/Users/amit/Desktop/CRF.txt"), null, null);
+        t.tag(s);
+        List<Mention> m = s.getMentions();
+        for (Mention mention : m)
+        {
+            System.out.println(mention);
+        }
+    }
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws IOException
     {
         File conceptDir = new File("C:/Users/amit/Desktop/concept/");
         File txtDir = new File("C:/Users/amit/Desktop/txt/");
@@ -171,11 +183,9 @@ public class ConceptTagger
         }
         System.out.println("Converting data into MALLET format...done");
 
-        CRFTagger crf = CRFTagger.train(sentences, 1, true, TagFormat.IOB,
+        CRFTagger crf = CRFTagger.train(sentences, 1, false, TagFormat.IOB,
                 TextDirection.Forward, null, null, true);
-        
-        
 
-        crf.write(new File("C:/Users/amit/Desktop/CRF.txt"));
+        crf.write(new File("C:/Users/amit/Desktop/CRF1.txt"));
     }
 }
