@@ -2,6 +2,7 @@ package sample.i2b2;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 
 import pitt.search.semanticvectors.FlagConfig;
 import pitt.search.semanticvectors.VectorStoreReaderLucene;
@@ -20,7 +21,26 @@ public class ThesaurusPipe extends Pipe implements Serializable
     int leftBoundary;
     int rightBoundary;
     VectorStoreReaderLucene storeReader;
+    boolean ifSimilarityMatrixAvailable;
+    
+    List<String> wordsList;
+    double[][] matrix;
 
+    public ThesaurusPipe(String prefix, int leftBoundary, int rightBoundary, boolean ifSimilarityMatrixAvailable) throws IOException
+    {
+        this.prefix = prefix;
+        this.leftBoundary = leftBoundary;
+        this.rightBoundary = rightBoundary;
+        
+        FlagConfig flagConfig = FlagConfig
+                .getFlagConfig(PositionalIndexer.args);
+        storeReader = new VectorStoreReaderLucene("drxntermvectors.bin",
+                flagConfig);
+        
+        // TODO implement its use
+        this.ifSimilarityMatrixAvailable = ifSimilarityMatrixAvailable;
+    }
+    
     public ThesaurusPipe(String prefix, int leftBoundary, int rightBoundary) throws IOException
     {
         this.prefix = prefix;
@@ -36,6 +56,8 @@ public class ThesaurusPipe extends Pipe implements Serializable
     @Override
     public Instance pipe(Instance carrier)
     {
+        // TODO for better performance keep this thing 
+        // preprocessed and simply load that matrix
         TokenSequence ts = (TokenSequence) carrier.getData();
         int tsSize = ts.size();
         
