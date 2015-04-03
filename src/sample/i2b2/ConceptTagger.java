@@ -11,7 +11,6 @@ import java.util.List;
 
 import org.javatuples.Triplet;
 
-import edu.umass.cs.mallet.base.fst.PerClassAccuracyEvaluator;
 import banner.BannerProperties.TextDirection;
 import banner.Sentence;
 import banner.tagging.CRFTagger;
@@ -20,10 +19,33 @@ import banner.tagging.TaggedToken.TagFormat;
 
 public class ConceptTagger
 {
-    public static List<Sentence> sentences = new ArrayList<Sentence>();
-    public HashMap<Integer, List<Triplet<Integer, Integer, String>>> conceptMap;
+    private static List<Sentence> testSentences = new ArrayList<Sentence>();
+    private static List<Sentence> sentences = new ArrayList<Sentence>();
+    private HashMap<Integer, List<Triplet<Integer, Integer, String>>> conceptMap;
+    
+    public static CRFTagger crf;
+    
+    public void startCRFTraining()
+    {
+        File newTxtDir = new File("C:/Users/amit/Desktop/newconcept/");
+        File[] allConceptFiles = newTxtDir.listFiles();
 
-    public void ParseConceptFile(String dirName, String fileName)
+        System.out.println("Converting data into sentences");
+        ConceptTagger c = new ConceptTagger();
+        for (int i = 0; i < allConceptFiles.length; ++i)
+        {
+            c.ConvertTextToSentences(newTxtDir.getAbsolutePath() + "/",
+                    newTxtDir.listFiles()[i].getName());
+        }
+        System.out.println("Converting data into sentences...done");
+
+        crf = CRFTagger.train(sentences, 1, false, TagFormat.IOB,
+                TextDirection.Forward, null, null, true);
+
+        crf.write(new File("C:/Users/amit/Desktop/CRF1.txt"));
+    }
+
+    private void ParseConceptFile(String dirName, String fileName)
     {
         conceptMap = new HashMap<Integer, List<Triplet<Integer, Integer, String>>>();
         try (BufferedReader br = new BufferedReader(new FileReader(dirName
@@ -69,7 +91,7 @@ public class ConceptTagger
         }
     }
 
-    public void ParseTextFile(String dirName, String fileName)
+    private void ParseTextFile(String dirName, String fileName)
     {
         try (BufferedReader br = new BufferedReader(new FileReader(dirName
                 + fileName)))
@@ -130,7 +152,7 @@ public class ConceptTagger
         }
     }
 
-    public void ConvertTextToSentences(String dirName, String fileName)
+    private void ConvertTextToSentences(String dirName, String fileName)
     {
         try (BufferedReader br = new BufferedReader(new FileReader(dirName
                 + fileName)))
@@ -151,7 +173,28 @@ public class ConceptTagger
         }
     }
     
-    public void tagSentence() throws IOException
+    private void ConvertTestTextToSentences(String dirName, String fileName)
+    {
+        try (BufferedReader br = new BufferedReader(new FileReader(dirName
+                + fileName)))
+        {
+            String currLine;
+            while ((currLine = br.readLine()) != null)
+            {
+                currLine = currLine.trim();
+                if(currLine.length() == 0)
+                    continue;
+                Sentence s = Sentence.loadFromPiped(null, currLine);
+                testSentences.add(s);
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+    
+    private void tagSentence() throws IOException
     {
         Sentence s = Sentence.loadFromPiped(null, "There|O was|O no|O appreciable|B-problem cervical|I-problem ,|I-problem supraclavicular|I-problem ,|I-problem axillary|I-problem ,|I-problem or|I-problem inguinal|I-problem adenopathy|I-problem .|O ");
         CRFTagger t = CRFTagger.load(new File("C:/Users/amit/Desktop/CRF.txt"), null, null);
@@ -162,7 +205,22 @@ public class ConceptTagger
             System.out.println(mention);
         }
     }
+    
+    private static void FillTestSentencesList() throws IOException
+    {
+        File newTxtDir = new File("C:/Users/amit/Desktop/newconcept_p/");
+        File[] allConceptFiles = newTxtDir.listFiles();
 
+        System.out.println("Converting test data into MALLET format");
+        ConceptTagger c = new ConceptTagger();
+        for (int i = 0; i < allConceptFiles.length; ++i)
+        {
+            c.ConvertTestTextToSentences(newTxtDir.getAbsolutePath() + "/",
+                    newTxtDir.listFiles()[i].getName());
+        }
+        System.out.println("Converting test data into MALLET format...done");
+    }
+    
     public static void main(String[] args) throws IOException
     {
         File conceptDir = new File("C:/Users/amit/Desktop/concept/");
@@ -174,18 +232,23 @@ public class ConceptTagger
         ConceptTagger c = new ConceptTagger();
         for (int i = 0; i < allConceptFiles.length; ++i)
         {
-            c.ParseConceptFile(conceptDir.getAbsolutePath() + "/",
-                    allConceptFiles[i].getName());
-            c.ParseTextFile(txtDir.getAbsolutePath() + "/",
-                    txtDir.listFiles()[i].getName());
+//            c.ParseConceptFile(conceptDir.getAbsolutePath() + "/",
+//                    allConceptFiles[i].getName());
+//            c.ParseTextFile(txtDir.getAbsolutePath() + "/",
+//                    txtDir.listFiles()[i].getName());
             c.ConvertTextToSentences(newTxtDir.getAbsolutePath() + "/",
                     newTxtDir.listFiles()[i].getName());
         }
         System.out.println("Converting data into MALLET format...done");
 
-        CRFTagger crf = CRFTagger.train(sentences, 1, false, TagFormat.IOB,
+        FillTestSentencesList();
+        
+        crf = CRFTagger.train(sentences, testSentences, 2, false, TagFormat.IOB,
                 TextDirection.Forward, null, null, true);
 
         crf.write(new File("C:/Users/amit/Desktop/CRF1.txt"));
+        
+        // CRFTagger crf = CRFTagger.load(new File("C:/Users/amit/Desktop/CRF1.txt"), null, null);
+        crf.evaluateModel(testSentences);
     }
 }
