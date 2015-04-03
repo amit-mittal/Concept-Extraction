@@ -19,6 +19,7 @@ public class CorpusHandler
 {
     public IndexReader reader;
     public List<String> wordsList;
+    public double[][] matrix;
     
     public void loadCorpus() throws IOException
     {
@@ -26,30 +27,15 @@ public class CorpusHandler
                 "C:/Users/amit/workspace/Concept-Extraction/index")));
     }
     
-    public void generateIntersectionWithCorpus(Enumeration<ObjectVector> vectors)
-    {
-        wordsList = new ArrayList<String>();
-        
-        while(vectors.hasMoreElements())
-        {
-            String word = vectors.nextElement().getObject().toString();
-            if(ifWordPresent(word))
-            {
-                wordsList.add(word);
-            }
-        }
-    }
-    
     public void generateSimilarityMatrix(VectorStoreReaderLucene storeReader)
     {
         generateIntersectionWithCorpus(storeReader.getAllVectors());
         
+        System.out.println("Generating similarity matrix...");
         int size = wordsList.size();
-        System.out.println(size);
         
-        // TODO optimize this
-        double[][] matrix = new double[size][size];
-        for (int i = 0; i < size; ++i)
+        matrix = new double[size][size];
+        for (int i = 0; i < 10; ++i)
         {
             matrix[i][i] = 1;
             
@@ -64,9 +50,29 @@ public class CorpusHandler
                 matrix[j][i] = matrix[i][j];
             }
         }
+        
+        System.out.println("Generating similarity matrix...done!!");
     }
     
-    boolean ifWordPresent(String word)
+    private void generateIntersectionWithCorpus(Enumeration<ObjectVector> vectors)
+    {
+        System.out.println("Taking intersection of medline with i2b2 corpus...");
+        
+        wordsList = new ArrayList<String>();
+        
+        while(vectors.hasMoreElements())
+        {
+            String word = vectors.nextElement().getObject().toString();
+            if(ifWordPresent(word))
+            {
+                wordsList.add(word);
+            }
+        }
+        
+        System.out.println("Found " + wordsList.size() + " common strings");
+    }
+    
+    private boolean ifWordPresent(String word)
     {
         Term t = new Term("contents", word);
         try
