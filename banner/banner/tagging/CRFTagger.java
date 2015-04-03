@@ -18,13 +18,16 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import sample.i2b2.ThesaurusPipe;
 import dragon.nlp.tool.Lemmatiser;
 import edu.umass.cs.mallet.base.fst.CRF4;
 import edu.umass.cs.mallet.base.fst.MultiSegmentationEvaluator;
 import edu.umass.cs.mallet.base.fst.PerClassAccuracyEvaluator;
+import edu.umass.cs.mallet.base.fst.TokenAccuracyEvaluator;
 import edu.umass.cs.mallet.base.pipe.Pipe;
 import edu.umass.cs.mallet.base.pipe.SerialPipes;
 import edu.umass.cs.mallet.base.pipe.TokenSequence2FeatureVectorSequence;
+import edu.umass.cs.mallet.base.pipe.tsf.FeaturesInWindow;
 import edu.umass.cs.mallet.base.pipe.tsf.LexiconMembership;
 import edu.umass.cs.mallet.base.pipe.tsf.OffsetConjunctions;
 import edu.umass.cs.mallet.base.pipe.tsf.RegexMatches;
@@ -242,16 +245,17 @@ public class CRFTagger implements Tagger
         pipes.add(new TokenTextCharSuffix("4SUFFIX=", 4));
         pipes.add(new TokenTextCharNGrams("CHARNGRAM=", new int[] {2, 3}, true));
         try{
-            // Use this for determining
             pipes.add(new LexiconMembership("PROBLEM=", 
                     new File("C:/Users/amit/Desktop/problems.txt"), true));
             pipes.add(new LexiconMembership("TREATMENT=", 
                     new File("C:/Users/amit/Desktop/treatments.txt"), true));
             pipes.add(new LexiconMembership("TEST=", 
                     new File("C:/Users/amit/Desktop/tests.txt"), true));
+            pipes.add(new ThesaurusPipe("SIMILARITY", -1, 1));
         } catch(Exception e){
             e.printStackTrace();
         }
+        //pipes.add(new FeaturesInWindow("WINDOW-", -2, 3));
         
         
         // whether word in a lexicon
@@ -310,6 +314,7 @@ public class CRFTagger implements Tagger
             instances.add(new Instance(text, null, sentence.getTag(), null, pipe));
         }
         
+        forwardCRF.evaluate(new TokenAccuracyEvaluator(), instances);
         forwardCRF.evaluate(new PerClassAccuracyEvaluator(), instances);
     }
     
@@ -339,9 +344,12 @@ public class CRFTagger implements Tagger
         else
             throw new IllegalArgumentException("Order must be equal to 1 or 2");
         if (useFeatureInduction)
-            crf.trainWithFeatureInduction(instances, null, testInstances, null, 99999, 100, 10, 1000, 0.5, false, new double[] {.2, .5, .8});
+            crf.trainWithFeatureInduction(instances, null, testInstances, 
+                    new PerClassAccuracyEvaluator(), 99999, 100, 10, 1000, 0.5, 
+                    false, new double[] {.2, .5, 1.0});
         else
-            crf.train(instances, null, testInstances, null, 99999, 10, new double[] {.2, .5, .8});
+            crf.train(instances, null, testInstances, new PerClassAccuracyEvaluator(), 
+                    99999, 10, new double[] {.2, .5, 1.0});
         return crf;
     }
 
