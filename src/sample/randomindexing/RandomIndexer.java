@@ -39,6 +39,8 @@ import pitt.search.semanticvectors.Search;
 import pitt.search.semanticvectors.SearchResult;
 import pitt.search.semanticvectors.VectorStoreReaderLucene;
 import sample.criterias.Concept;
+import sample.criterias.Criteria;
+import sample.i2b2.CorpusHandler;
 import sample.umls.UmlsHandler;
 
 public class RandomIndexer
@@ -50,6 +52,7 @@ public class RandomIndexer
     static Concept problem = new Concept();
     static Concept treatment = new Concept();
     static Concept test = new Concept();
+    static Concept none = new Concept();
 
     public static void main(String[] args) throws IOException
     {
@@ -67,21 +70,15 @@ public class RandomIndexer
         storeReader = new VectorStoreReaderLucene("drxntermvectors.bin",
                 flagConfig);
 
-        // add query vector parameter so that can do for custom file
-        // also file format should be binary
-
-        // PopulateMaps();
-        // FindNearestNeighbors(searchArgs);
-        // tryStuff();
-
-        // TODO Load UMLS
+        // Load UMLS
         UmlsHandler umlsHandler = new UmlsHandler();
         umlsHandler.getDataFromSql();
 
+        System.out.println("Making word category map");
         // 0. problem 1. treatment 2. test 3. none
         wordCategoryMap = new HashMap<String, Integer>();
         Enumeration<ObjectVector> v = storeReader.getAllVectors();
-
+        
         // Populating word to category map
         while (v.hasMoreElements())
         {
@@ -104,12 +101,19 @@ public class RandomIndexer
                 wordCategoryMap.put(word, 3);
             }
         }
+        System.out.println("Making word category map...done");
         
-        // TODO Find F-Score and Accuracy to determine the best model
-        FindFScores();
+        // Finding F-Score to determine the best model
+        System.out.println("Finding F1-score");
+        // FindFScores(); TODO
+        System.out.println("Finding F1-score...done");
 
-        // Then find the similarity matrix
-        // GenerateSimilarityMatrix();
+        // Loading i2b2 corpus
+        CorpusHandler corpusHandler = new CorpusHandler();
+        corpusHandler.loadCorpus();
+        
+        // Calculating the similarity matrix
+        corpusHandler.generateSimilarityMatrix(storeReader);
     }
 
     public static void FindFScores()
@@ -117,9 +121,10 @@ public class RandomIndexer
         int r = 0;
         for (String word : wordCategoryMap.keySet())
         {
-            ++r;
             // TODO refactor below code
             int actualCategory = wordCategoryMap.get(word);
+            // if(actualCategory == 3)
+            //    continue;
             int predictedCategory = FindNearestNeighbor(word);
             if (predictedCategory == actualCategory)
             {
@@ -130,6 +135,8 @@ public class RandomIndexer
                     treatment.true_positive += 1;
                 else if (predictedCategory == 2)
                     test.true_positive += 1;
+                else
+                    none.true_positive += 1;
             }
             else
             {
@@ -139,6 +146,8 @@ public class RandomIndexer
                     treatment.false_positive += 1;
                 else if (predictedCategory == 2)
                     test.false_positive += 1;
+                else
+                    none.false_positive += 1;
 
                 if (actualCategory == 0)
                     problem.false_negative += 1;
@@ -146,12 +155,16 @@ public class RandomIndexer
                     treatment.false_negative += 1;
                 else if (actualCategory == 2)
                     test.false_negative += 1;
+                else
+                    none.false_negative += 1;
             }
 
-            if (r > 60)
+            ++r;
+            if (r > 999)
                 break;
         }
-
+        
+        // TODO confirm if finding f-measure in a right way
         System.out.println("Problem: " + problem);
         System.out.println("F1 Score for problem: " + problem.findF1Measure());
 
@@ -161,7 +174,21 @@ public class RandomIndexer
 
         System.out.println("Test: " + test);
         System.out.println("F1 Score for test: " + test.findF1Measure());
+        
+        System.out.println("None: " + none);
+        System.out.println("F1 Score for none: " + none.findF1Measure());
+        
+        int total_true_positive = problem.true_positive + treatment.true_positive + test.true_positive + none.true_positive;
+        int total_false_positive = problem.false_positive + treatment.false_positive + test.false_positive + none.false_positive;
+        int total_false_negative = problem.false_negative + treatment.false_negative + test.false_negative + none.false_negative;
+        
+        float precision = Criteria.FindPrecision(total_true_positive, total_false_positive);
+        float recall = Criteria.FindRecall(total_true_positive, total_false_negative);
+        
+        System.out.println("Combined: ");
+        System.out.println("F1 Score for combined: " + Criteria.FindF1Measure(precision, recall));
     }
+    
 
     public static int FindNearestNeighbor(String query)
     {
@@ -184,7 +211,11 @@ public class RandomIndexer
                 SearchResult result = results.get(i);
                 String w = result.getObjectVector().getObject().toString()
                         .toLowerCase();
-                categories[wordCategoryMap.get(w)] += result.getScore();
+                
+                if(result.getScore() > 0)
+                {
+                    categories[wordCategoryMap.get(w)] += result.getScore();
+                }
             }
 
             // TODO refactor below function
@@ -199,40 +230,12 @@ public class RandomIndexer
                 }
             }
 
-            return index + 1;
+            return index;
         }
         catch (IllegalArgumentException e)
         {
+            e.printStackTrace();
             throw e;
         }
-    }
-
-    public static void GenerateSimilarityMatrix()
-    {
-        Enumeration<ObjectVector> vi = storeReader.getAllVectors();
-        int size = storeReader.getNumVectors();
-
-        // TODO optimize this
-        double[][] matrix = new double[size][size];
-        for (int i = 0; i < size; ++i)
-        {
-            ObjectVector m = vi.nextElement();
-            Enumeration<ObjectVector> vj = storeReader.getAllVectors();
-            for (int j = 0; j < size; ++j)
-            {
-                ObjectVector n = vj.nextElement();
-                matrix[i][j] = m.getVector().measureOverlap(n.getVector());
-            }
-        }
-    }
-
-    public static void tryStuff()
-    {
-        Enumeration<ObjectVector> v = storeReader.getAllVectors();
-        System.out.println(storeReader.getVector("exercise"));
-
-        System.out.println(v.nextElement().getObject()); // this gets the tag
-                                                         // value
-        System.out.println(v.nextElement().getVector()); // this gets the vector
     }
 }

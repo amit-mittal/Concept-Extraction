@@ -243,7 +243,12 @@ public class ConceptTagger
 
         FillTestSentencesList();
         
-        crf = CRFTagger.train(sentences, testSentences, 2, false, TagFormat.IOB,
+        // TODO
+        // can change order to 1 or 2
+        // can change the ratio on which incremental training done
+        // change the pipes - change conjunction or features in window
+        // implement new pipe - thesaurus, word vector
+        crf = CRFTagger.train(sentences, testSentences, 1, false, TagFormat.IOB,
                 TextDirection.Forward, null, null, true);
 
         crf.write(new File("C:/Users/amit/Desktop/CRF1.txt"));
