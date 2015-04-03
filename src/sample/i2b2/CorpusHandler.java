@@ -1,7 +1,9 @@
 package sample.i2b2;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -27,7 +29,7 @@ public class CorpusHandler
                 "C:/Users/amit/workspace/Concept-Extraction/index")));
     }
     
-    public void generateSimilarityMatrix(VectorStoreReaderLucene storeReader)
+    public void generateSimilarityMatrix(VectorStoreReaderLucene storeReader) throws IOException
     {
         generateIntersectionWithCorpus(storeReader.getAllVectors());
         
@@ -35,7 +37,7 @@ public class CorpusHandler
         int size = wordsList.size();
         
         matrix = new double[size][size];
-        for (int i = 0; i < 10; ++i)
+        for (int i = 0; i < 50; ++i)
         {
             matrix[i][i] = 1;
             
@@ -52,6 +54,18 @@ public class CorpusHandler
         }
         
         System.out.println("Generating similarity matrix...done!!");
+        
+        System.out.println("Writing data structure to files");
+        FileOutputStream fos = new FileOutputStream("wordlist");
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(wordsList);
+        oos.close();
+        
+        FileOutputStream fos2 = new FileOutputStream("similarity_matrix");
+        ObjectOutputStream oos2 = new ObjectOutputStream(fos2);
+        oos2.writeObject(matrix);
+        oos2.close();
+        System.out.println("Writing data structure to files...done");
     }
     
     private void generateIntersectionWithCorpus(Enumeration<ObjectVector> vectors)
