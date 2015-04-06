@@ -19,6 +19,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import sample.i2b2.ThesaurusPipe;
+import sample.util.Constants;
 import dragon.nlp.tool.Lemmatiser;
 import edu.umass.cs.mallet.base.fst.CRF4;
 import edu.umass.cs.mallet.base.fst.MultiSegmentationEvaluator;
@@ -246,11 +247,11 @@ public class CRFTagger implements Tagger
         pipes.add(new TokenTextCharNGrams("CHARNGRAM=", new int[] {2, 3}, true));
         try{
             pipes.add(new LexiconMembership("PROBLEM=", 
-                    new File("C:/Users/amit/Desktop/problems.txt"), true));
+                    new File(Constants.PROBLEMS_DICTIONARY_FILE_PATH), true));
             pipes.add(new LexiconMembership("TREATMENT=", 
-                    new File("C:/Users/amit/Desktop/treatments.txt"), true));
+                    new File(Constants.TREATMENTS_DICTIONARY_FILE_PATH), true));
             pipes.add(new LexiconMembership("TEST=", 
-                    new File("C:/Users/amit/Desktop/tests.txt"), true));
+                    new File(Constants.TESTS_DICTIONARY_FILE_PATH), true));
             pipes.add(new ThesaurusPipe("SIMILARITY", -1, 1));
         } catch(Exception e){
             e.printStackTrace();
