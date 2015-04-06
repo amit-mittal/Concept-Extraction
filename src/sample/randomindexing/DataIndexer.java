@@ -1,13 +1,14 @@
 package sample.randomindexing;
 
 import pitt.search.lucene.IndexFilePositions;
+import sample.util.Constants;
 
 public class DataIndexer
 {
     public void indexDirectory()
     {
         String[] indexArgs = new String[1];
-        indexArgs[0] = "C:/Users/amit/Desktop/b/pubmed_result_001.txt";
+        indexArgs[0] = Constants.MEDLINE_ABSTRACTS_FOLDER_PATH;
 
         IndexFilePositions.main(indexArgs);
     }

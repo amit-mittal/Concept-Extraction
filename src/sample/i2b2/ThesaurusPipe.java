@@ -8,6 +8,7 @@ import pitt.search.semanticvectors.FlagConfig;
 import pitt.search.semanticvectors.VectorStoreReaderLucene;
 import pitt.search.semanticvectors.vectors.Vector;
 import sample.randomindexing.PositionalIndexer;
+import sample.util.Constants;
 import edu.umass.cs.mallet.base.pipe.Pipe;
 import edu.umass.cs.mallet.base.types.Instance;
 import edu.umass.cs.mallet.base.types.Token;
@@ -34,7 +35,7 @@ public class ThesaurusPipe extends Pipe implements Serializable
         
         FlagConfig flagConfig = FlagConfig
                 .getFlagConfig(PositionalIndexer.args);
-        storeReader = new VectorStoreReaderLucene("drxntermvectors.bin",
+        storeReader = new VectorStoreReaderLucene(Constants.WORD_VECTORS_FILE_PATH,
                 flagConfig);
         
         // TODO implement its use
@@ -49,7 +50,7 @@ public class ThesaurusPipe extends Pipe implements Serializable
         
         FlagConfig flagConfig = FlagConfig
                 .getFlagConfig(PositionalIndexer.args);
-        storeReader = new VectorStoreReaderLucene("drxntermvectors.bin",
+        storeReader = new VectorStoreReaderLucene(Constants.WORD_VECTORS_FILE_PATH,
                 flagConfig);
     }
 

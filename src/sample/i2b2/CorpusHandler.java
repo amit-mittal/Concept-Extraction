@@ -16,6 +16,7 @@ import org.apache.lucene.store.FSDirectory;
 import pitt.search.semanticvectors.ObjectVector;
 import pitt.search.semanticvectors.VectorStoreReaderLucene;
 import pitt.search.semanticvectors.vectors.Vector;
+import sample.util.Constants;
 
 public class CorpusHandler
 {
@@ -26,7 +27,7 @@ public class CorpusHandler
     public void loadCorpus() throws IOException
     {
         reader = DirectoryReader.open(FSDirectory.open(new File(
-                "C:/Users/amit/workspace/Concept-Extraction/index")));
+                Constants.i2b2_INDEX_FOLDER_PATH)));
     }
     
     public void generateSimilarityMatrix(VectorStoreReaderLucene storeReader) throws IOException
@@ -56,12 +57,12 @@ public class CorpusHandler
         System.out.println("Generating similarity matrix...done!!");
         
         System.out.println("Writing data structure to files");
-        FileOutputStream fos = new FileOutputStream("wordlist");
+        FileOutputStream fos = new FileOutputStream(Constants.WORD_LIST_FILE_PATH);
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         oos.writeObject(wordsList);
         oos.close();
         
-        FileOutputStream fos2 = new FileOutputStream("similarity_matrix");
+        FileOutputStream fos2 = new FileOutputStream(Constants.SIMILARITY_MATRIX_FILE_PATH);
         ObjectOutputStream oos2 = new ObjectOutputStream(fos2);
         oos2.writeObject(matrix);
         oos2.close();

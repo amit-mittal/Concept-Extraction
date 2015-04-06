@@ -7,14 +7,16 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.TreeSet;
 
+import sample.util.Constants;
+
 public class SqlHandler
 {
     private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-    private static final String DB_URL = "jdbc:mysql://localhost/2014ab";
+    private static final String DB_URL = Constants.SQL_DATABASE_PATH;
 
     // Database credentials
-    private static final String USER = "root";
-    private static final String PASS = "";
+    private static final String USER = Constants.SQL_USERNAME;
+    private static final String PASS = Constants.SQL_PASSWORD;
 
     public static Connection conn = null;
 

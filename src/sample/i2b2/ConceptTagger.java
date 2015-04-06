@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.javatuples.Triplet;
 
+import sample.util.Constants;
 import banner.BannerProperties.TextDirection;
 import banner.Sentence;
 import banner.tagging.CRFTagger;
@@ -27,7 +28,7 @@ public class ConceptTagger
     
     public void startCRFTraining()
     {
-        File newTxtDir = new File("C:/Users/amit/Desktop/newconcept/");
+        File newTxtDir = new File(Constants.i2b2_MALLET_TRAINING_FOLDER_PATH);
         File[] allConceptFiles = newTxtDir.listFiles();
 
         System.out.println("Converting data into sentences");
@@ -42,7 +43,7 @@ public class ConceptTagger
         crf = CRFTagger.train(sentences, 1, false, TagFormat.IOB,
                 TextDirection.Forward, null, null, true);
 
-        crf.write(new File("C:/Users/amit/Desktop/CRF1.txt"));
+        crf.write(new File(Constants.CRF_MODEL_FILE_PATH));
     }
 
     private void ParseConceptFile(String dirName, String fileName)
@@ -142,7 +143,7 @@ public class ConceptTagger
             }
 
             PrintWriter out = new PrintWriter(
-                    "C:/Users/amit/Desktop/newconcept/" + fileName);
+                    Constants.i2b2_MALLET_TRAINING_FOLDER_PATH + fileName);
             out.println(newString.toString().trim());
             out.close();
         }
@@ -197,7 +198,7 @@ public class ConceptTagger
     private void tagSentence() throws IOException
     {
         Sentence s = Sentence.loadFromPiped(null, "There|O was|O no|O appreciable|B-problem cervical|I-problem ,|I-problem supraclavicular|I-problem ,|I-problem axillary|I-problem ,|I-problem or|I-problem inguinal|I-problem adenopathy|I-problem .|O ");
-        CRFTagger t = CRFTagger.load(new File("C:/Users/amit/Desktop/CRF.txt"), null, null);
+        CRFTagger t = CRFTagger.load(new File(Constants.CRF_MODEL_FILE_PATH), null, null);
         t.tag(s);
         List<Mention> m = s.getMentions();
         for (Mention mention : m)
@@ -208,7 +209,7 @@ public class ConceptTagger
     
     private static void FillTestSentencesList() throws IOException
     {
-        File newTxtDir = new File("C:/Users/amit/Desktop/newconcept_p/");
+        File newTxtDir = new File(Constants.i2b2_MALLET_TEST_FOLDER_PATH);
         File[] allConceptFiles = newTxtDir.listFiles();
 
         System.out.println("Converting test data into MALLET format");
@@ -223,9 +224,9 @@ public class ConceptTagger
     
     public static void main(String[] args) throws IOException
     {
-        File conceptDir = new File("C:/Users/amit/Desktop/concept/");
-        File txtDir = new File("C:/Users/amit/Desktop/txt/");
-        File newTxtDir = new File("C:/Users/amit/Desktop/newconcept/");
+        File conceptDir = new File(Constants.i2b2_TAGS_TRAINING_FOLDER_PATH);
+        File txtDir = new File(Constants.i2b2_DATA_TRAINING_FOLDER_PATH);
+        File newTxtDir = new File(Constants.i2b2_MALLET_TRAINING_FOLDER_PATH);
         File[] allConceptFiles = conceptDir.listFiles();
 
         System.out.println("Converting data into MALLET format");
@@ -251,9 +252,9 @@ public class ConceptTagger
         crf = CRFTagger.train(sentences, testSentences, 1, false, TagFormat.IOB,
                 TextDirection.Forward, null, null, true);
 
-        crf.write(new File("C:/Users/amit/Desktop/CRF1.txt"));
+        crf.write(new File(Constants.CRF_MODEL_FILE_PATH));
         
-        // CRFTagger crf = CRFTagger.load(new File("C:/Users/amit/Desktop/CRF1.txt"), null, null);
+        // CRFTagger crf = CRFTagger.load(new File(Constants.CRF_MODEL_FILE_PATH), null, null);
         crf.evaluateModel(testSentences);
     }
 }
