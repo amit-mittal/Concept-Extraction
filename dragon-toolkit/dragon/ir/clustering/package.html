@@ -1,0 +1,19 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head><!--
+  Copyright (c) 2005 IST, Drexel University
+  All Rights Reserved.
+--></head>
+
+<body bgcolor="white">A package for document clustering and its evaluation
+
+<h2>Package Specification</h2>
+The toolkit implements two common clustering approaches, the agglomerative approach and the K-Means approach.
+These two approaches have many variants in terms of similarity measures. The toolkit encapsulates the details 
+of different similarity measures into the implementations of two interfaces, Doc Distance and Cluster Model, respectively.  
+The Doc Distance interface computes the distance between two documents and is designed for agglomerative clustering approaches. 
+The Cluster Model interface computes the distance between a document and a cluster or the generative probability of a document by a cluster model. 
+To evaluate cluster quality, please call dragon.ir.clustering.ClusteringEva. 
+
+<!-- Put @see and @since tags here. --></body>
+</html>

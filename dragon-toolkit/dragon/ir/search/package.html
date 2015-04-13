@@ -1,0 +1,22 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head><!--
+  Copyright (c) 2005 IST, Drexel University
+  All Rights Reserved.
+--></head>
+
+<body bgcolor="white">A package for text retrieval and its evaluation
+
+<h2>Package Specification</h2>
+The toolkit provides a well-defined framework for text retrieval. The first step is to generate a query according to the topic descriptions 
+(such as TREC Topic files). Please refer to the package of dragon.ir.query for query generation. The second step is to create a searcher. 
+Since there are so many different retrieval models, the toolkit creates an interface called Smoother to hide the implementation details of 
+different models. Thus, the routine for searching is the same for different models. One can simply call a full rank searcher or a partial 
+rank searcher. The toolkit has implemented various language model smoothing methods as well as traditional probabilistic and vector space 
+models. Pseudo-relevance feedback and query expansion are two frequently used techniques for improving the effectiveness of IR. One can call 
+a feedback searcher or an expansion searcher to incorporate these two techniques, respectively. The details of the feedback approaches and 
+query expansion approaches are encapsulated into the implantation class of two interfaces, Feedback and Expansion, respectively. To evaluate 
+the IR performance using TREC protocol, please call dragon.ir.search.evaluate.TrecEva. 
+
+<!-- Put @see and @since tags here. --></body>
+</html>

@@ -1,0 +1,17 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head><!--
+  Copyright (c) 2005 IST, Drexel University
+  All Rights Reserved.
+--></head>
+
+<body bgcolor="white">A package for matrix (both dense matrix and sparse matrix) storage, read, write and operations.
+
+<h2>Package Specification</h2>
+The dragon toolkit uses its own technique for sparse matrix. All sparse matrix classes should implement an interface called SparseMatrix. The 
+toolkit has included three implmentations, flat sparse matrix, super sparse matrix, and giant sparse matrix for matrix in different size. The flat
+sparse matrix load all data into memory and thus very fast, but fit for small dataset only. The super sparse matrix will load index into the memory
+and cache a given number of rows. The giant sparse matrix load nothing into the memory except caching the most recent row.
+
+<!-- Put @see and @since tags here. --></body>
+</html>
