@@ -78,26 +78,24 @@ public class RandomIndexer
         
         // Finding F-Score to determine the best model
         System.out.println("Finding F1-score");
-        // FindFScores(); TODO
+        FindFScores();
         System.out.println("Finding F1-score...done");
 
         // Loading i2b2 corpus
-        CorpusHandler corpusHandler = new CorpusHandler();
+        /*CorpusHandler corpusHandler = new CorpusHandler();
         corpusHandler.loadCorpus();
         
         // Calculating the similarity matrix
-        corpusHandler.generateSimilarityMatrix(storeReader);
+        corpusHandler.generateSimilarityMatrix(storeReader);*/
     }
 
     public static void FindFScores()
     {
+        // TODO Confirm if finding f-score correctly
         int r = 0;
         for (String word : wordCategoryMap.keySet())
         {
-            // TODO refactor below code
             int actualCategory = wordCategoryMap.get(word);
-            // if(actualCategory == 3)
-            //    continue;
             int predictedCategory = FindNearestNeighbor(word);
             if (predictedCategory == actualCategory)
             {
@@ -133,11 +131,10 @@ public class RandomIndexer
             }
 
             ++r;
-            if (r > 999)
-                break;
+            // if (r > 999)
+            //    break;
         }
         
-        // TODO confirm if finding f-measure in a right way
         System.out.println("Problem: " + problem);
         System.out.println("F1 Score for problem: " + problem.findF1Measure());
 
@@ -160,6 +157,7 @@ public class RandomIndexer
         
         System.out.println("Combined: ");
         System.out.println("F1 Score for combined: " + Criteria.FindF1Measure(precision, recall));
+        System.out.println("Accuracy for combined: " + (double)total_true_positive/wordCategoryMap.size());
     }
     
 
@@ -191,7 +189,6 @@ public class RandomIndexer
                 }
             }
 
-            // TODO refactor below function
             double largest = categories[0];
             int index = 0;
             for (int i = 1; i < categories.length; i++)

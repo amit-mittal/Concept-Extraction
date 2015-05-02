@@ -38,7 +38,7 @@ public class CorpusHandler
         int size = wordsList.size();
         
         matrix = new double[size][size];
-        for (int i = 0; i < 50; ++i)
+        for (int i = 0; i < 1500; ++i)
         {
             matrix[i][i] = 1;
             
@@ -52,6 +52,7 @@ public class CorpusHandler
                 matrix[i][j] = v1.measureOverlap(v2);
                 matrix[j][i] = matrix[i][j];
             }
+            System.out.println("Done " + i + "th round");
         }
         
         System.out.println("Generating similarity matrix...done!!");

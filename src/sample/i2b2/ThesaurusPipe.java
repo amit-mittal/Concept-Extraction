@@ -1,8 +1,12 @@
 package sample.i2b2;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.List;
+
+import org.hamcrest.core.IsSame;
 
 import pitt.search.semanticvectors.FlagConfig;
 import pitt.search.semanticvectors.VectorStoreReaderLucene;
@@ -35,8 +39,36 @@ public class ThesaurusPipe extends Pipe implements Serializable
         
         FlagConfig flagConfig = FlagConfig
                 .getFlagConfig(PositionalIndexer.args);
-        storeReader = new VectorStoreReaderLucene(Constants.WORD_VECTORS_FILE_PATH,
-                flagConfig);
+        
+        FileInputStream fileIn = new FileInputStream(Constants.WORD_LIST_FILE_PATH);
+        ObjectInputStream in = new ObjectInputStream(fileIn);
+        try
+        {
+            wordsList = (List<String>) in.readObject();
+        }
+        catch (ClassNotFoundException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        in.close();
+        fileIn.close();
+        
+        
+        FileInputStream fileIn2 = new FileInputStream(Constants.SIMILARITY_MATRIX_FILE_PATH);
+        ObjectInputStream in2 = new ObjectInputStream(fileIn2);
+        try
+        {
+            matrix =  (double[][]) in2.readObject();
+        }
+        catch (ClassNotFoundException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        in2.close();
+        fileIn2.close();
+        
         
         // TODO implement its use
         this.ifSimilarityMatrixAvailable = ifSimilarityMatrixAvailable;
@@ -52,15 +84,45 @@ public class ThesaurusPipe extends Pipe implements Serializable
                 .getFlagConfig(PositionalIndexer.args);
         storeReader = new VectorStoreReaderLucene(Constants.WORD_VECTORS_FILE_PATH,
                 flagConfig);
+        
+        this.ifSimilarityMatrixAvailable = false;
     }
 
     @Override
     public Instance pipe(Instance carrier)
     {
-        // TODO for better performance keep this thing 
-        // preprocessed and simply load that matrix
         TokenSequence ts = (TokenSequence) carrier.getData();
         int tsSize = ts.size();
+        
+        if(ifSimilarityMatrixAvailable){
+            for (int i = 0; i < tsSize; i++)
+            {
+                Token t = (Token) ts.get(i);
+                
+                if(wordsList.contains(t.getText()))
+                {
+                    int list_i = wordsList.indexOf(t.getText());
+                    for (int position = i + leftBoundary; position < i + rightBoundary; position++)
+                    {
+                        int index = position - i;
+                        if (position == i || position < 0 || position >= tsSize)
+                            continue;
+
+                        Token e = (Token) ts.get(position);
+                        if(wordsList.contains(e.getText()))
+                        {
+                            int list_i2 = wordsList.indexOf(e.getText());
+                            //if(matrix[list_i][list_i2] >= 0.7){
+                            t.setFeatureValue(prefix + index, matrix[list_i][list_i2]);
+                            //}
+                        }
+                    }
+                }
+            }
+            
+            return carrier;
+        }
+        
         
         for (int i = 0; i < tsSize; i++)
         {

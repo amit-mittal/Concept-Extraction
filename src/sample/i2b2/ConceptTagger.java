@@ -11,6 +11,10 @@ import java.util.List;
 
 import org.javatuples.Triplet;
 
+import dragon.nlp.tool.HeppleTagger;
+import dragon.nlp.tool.MedPostTagger;
+import dragon.nlp.tool.lemmatiser.EngLemmatiser;
+import edu.umass.cs.mallet.base.fst.CRF;
 import sample.util.Constants;
 import banner.BannerProperties.TextDirection;
 import banner.Sentence;
@@ -249,9 +253,11 @@ public class ConceptTagger
         // can change the ratio on which incremental training done
         // change the pipes - change conjunction or features in window
         // implement new pipe - thesaurus, word vector
+        // change the POS tagger
+        // change if vector boolean or augmented or none
         crf = CRFTagger.train(sentences, testSentences, 1, false, TagFormat.IOB,
-                TextDirection.Forward, null, null, true);
-
+                TextDirection.Forward, new EngLemmatiser(), new HeppleTagger(), true);
+        
         crf.write(new File(Constants.CRF_MODEL_FILE_PATH));
         
         // CRFTagger crf = CRFTagger.load(new File(Constants.CRF_MODEL_FILE_PATH), null, null);

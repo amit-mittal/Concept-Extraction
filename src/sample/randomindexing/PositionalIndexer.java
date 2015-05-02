@@ -57,7 +57,7 @@ public class PositionalIndexer
         args[6] = "-docindexing";
         args[7] = "incremental";
         args[8] = "-windowradius";
-        args[9] = "2";
+        args[9] = "4";
         args[10] = "-positionalmethod";
         args[11] = "directional";
         args[12] = "-luceneindexpath";
