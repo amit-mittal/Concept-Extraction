@@ -245,6 +245,8 @@ public class CRFTagger implements Tagger
         pipes.add(new TokenTextCharSuffix("3SUFFIX=", 3));
         pipes.add(new TokenTextCharSuffix("4SUFFIX=", 4));
         pipes.add(new TokenTextCharNGrams("CHARNGRAM=", new int[] {2, 3}, true));
+        
+        // New pipes added - START
         try{
             pipes.add(new LexiconMembership("PROBLEM=", 
                     new File(Constants.PROBLEMS_DICTIONARY_FILE_PATH), true));
@@ -252,19 +254,19 @@ public class CRFTagger implements Tagger
                     new File(Constants.TREATMENTS_DICTIONARY_FILE_PATH), true));
             pipes.add(new LexiconMembership("TEST=", 
                     new File(Constants.TESTS_DICTIONARY_FILE_PATH), true));
-            pipes.add(new ThesaurusPipe("SIMILARITY", -1, 1));
+            pipes.add(new ThesaurusPipe("SIMILARITY", -1, 1, true));
         } catch(Exception e){
             e.printStackTrace();
         }
-        //pipes.add(new FeaturesInWindow("WINDOW-", -2, 3));
-        
+        pipes.add(new FeaturesInWindow("WINDOW-", -2, 3));
+        // New pipes added - END
         
         // whether word in a lexicon
         pipes.add(new RegexMatches("ROMAN", Pattern.compile("[IVXDLCM]+", Pattern.CASE_INSENSITIVE)));
         pipes.add(new RegexMatches("GREEK", Pattern.compile(GREEK, Pattern.CASE_INSENSITIVE)));
         pipes.add(new RegexMatches("ISPUNCT", Pattern.compile("[`~!@#$%^&*()-=_+\\[\\]\\\\{}|;\':\\\",./<>?]+")));
         pipes.add(new OffsetConjunctions(new int[][] { {-2}, {2}}));
-        pipes.add(new TokenSequence2FeatureVectorSequence(true, true));
+        pipes.add(new TokenSequence2FeatureVectorSequence(false, true));
     }
     
     
@@ -347,10 +349,10 @@ public class CRFTagger implements Tagger
         if (useFeatureInduction)
             crf.trainWithFeatureInduction(instances, null, testInstances, 
                     new PerClassAccuracyEvaluator(), 99999, 100, 10, 1000, 0.5, 
-                    false, new double[] {.2, .5, 1.0});
+                    false, new double[] {.2, .5, 0.8});
         else
             crf.train(instances, null, testInstances, new PerClassAccuracyEvaluator(), 
-                    99999, 10, new double[] {.2, .5, 1.0});
+                    99999, 10, new double[] {.2, .5, 0.8});
         return crf;
     }
 
