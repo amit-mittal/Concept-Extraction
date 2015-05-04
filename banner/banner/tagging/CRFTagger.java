@@ -254,7 +254,7 @@ public class CRFTagger implements Tagger
                     new File(Constants.TREATMENTS_DICTIONARY_FILE_PATH), true));
             pipes.add(new LexiconMembership("TEST=", 
                     new File(Constants.TESTS_DICTIONARY_FILE_PATH), true));
-            pipes.add(new ThesaurusPipe("SIMILARITY", -1, 1, true));
+            //pipes.add(new ThesaurusPipe("SIMILARITY", -1, 1, true));
         } catch(Exception e){
             e.printStackTrace();
         }
@@ -266,7 +266,7 @@ public class CRFTagger implements Tagger
         pipes.add(new RegexMatches("GREEK", Pattern.compile(GREEK, Pattern.CASE_INSENSITIVE)));
         pipes.add(new RegexMatches("ISPUNCT", Pattern.compile("[`~!@#$%^&*()-=_+\\[\\]\\\\{}|;\':\\\",./<>?]+")));
         pipes.add(new OffsetConjunctions(new int[][] { {-2}, {2}}));
-        pipes.add(new TokenSequence2FeatureVectorSequence(false, true));
+        pipes.add(new TokenSequence2FeatureVectorSequence(true, true));
     }
     
     

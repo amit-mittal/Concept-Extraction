@@ -261,6 +261,6 @@ public class ConceptTagger
         crf.write(new File(Constants.CRF_MODEL_FILE_PATH));
         
         // CRFTagger crf = CRFTagger.load(new File(Constants.CRF_MODEL_FILE_PATH), null, null);
-        crf.evaluateModel(testSentences);
+        // crf.evaluateModel(testSentences);
     }
 }
